@@ -1,0 +1,18 @@
+# Priklausomybės
+node_modules
+
+# Next.js
+.next
+out
+
+# Vercel
+.vercel
+
+# Aplinkos kintamieji (tikros reikšmės į Git nepatenka)
+.env
+.env.*
+!.env.example
+
+# Sistemos ir žurnalų failai
+.DS_Store
+*.log
