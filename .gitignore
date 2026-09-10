@@ -1,9 +1,17 @@
 # Priklausomybės
 node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # Next.js
 .next
 out
+/build
 
 # Vercel
 .vercel
@@ -16,3 +24,11 @@ out
 # Sistemos ir žurnalų failai
 .DS_Store
 *.log
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testavimo ataskaitos
+/coverage
