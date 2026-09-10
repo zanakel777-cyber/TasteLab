@@ -1,6 +1,6 @@
 # TasteLab
 
-Ragauk, mokykis, rezervuok – vietų ribotai.
+Ragauk, mokykis, rezervuok – kol dar liko vietų.
 
 ## Komanda
 
