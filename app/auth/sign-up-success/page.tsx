@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,15 +16,18 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Thank you for signing up!
+                Paskyra sukurta – galite prisijungti
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription>Registracija sėkminga</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
+                El. pašto patvirtinti nereikia – prisijunkite tuo pačiu el. paštu
+                ir slaptažodžiu.
               </p>
+              <Button asChild className="w-full">
+                <Link href="/auth/login">Prisijungti</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
