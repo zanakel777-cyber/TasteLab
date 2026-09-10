@@ -1,6 +1,6 @@
 # TasteLab
 
-Ragauk, mokykis, rezervuok – vietos tirpsta.
+Ragauk, mokykis, rezervuok – vietos tirpsta...
 
 ## Komanda
 
