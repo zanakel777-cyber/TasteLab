@@ -1,6 +1,6 @@
 # TasteLab
 
-Ragauk, mokykis, rezervuok – vietos tirpsta.
+Skonio dirbtuvės su labai ribotu vietų skaičiumi.
 
 ## Komanda
 
