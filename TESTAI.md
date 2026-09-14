@@ -17,6 +17,7 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | **Į atšauktą veiklą iš pasenusio puslapio.** Ingrida neatnaujintame `/veiklos` puslapyje paspaudė „Rezervuoti“ jau atšauktai veiklai | Duomenų bazė atmeta; sąsaja parodo priežastį ir neleidžia bandyti dar kartą | Pasirodė „Veikla atšaukta“, mygtukas tapo neaktyvus; nieko neįrašyta | ✅ |
 | **Trigeris: datos keitimas.** SQL Editor'e `update activities set starts_at = starts_at + interval '1 day'` | Duomenų bazė neleidžia keisti datos po sukūrimo | Klaida `P0001: Datos keisti negalima`; įrašas nepasikeitė | ✅ |
 | **Trigeris: atšaukimo atšaukimas.** SQL Editor'e `update activities set status = 'active'` atšauktai veiklai | Duomenų bazė neleidžia grąžinti atšauktos veiklos | Klaida `P0001: Atšauktos veiklos grąžinti negalima`; statusas liko `cancelled` | ✅ |
+| **Atnaujinimas į v1.1.** Paskelbėme naują versiją į tą patį Vercel projektą ir palyginome duomenis prieš ir po diegimo | Diegimas nieko nesugadina: rezervacijos lieka, adresas nesikeičia | Prieš ir po diegimo – 4 rezervacijos, sąrašas identiškas; ta pati vieša nuoroda; Vercel diegimas atitinka commit'ą `1f92131` | ✅ |
 
 ## Dar neatlikti bandymai
 
