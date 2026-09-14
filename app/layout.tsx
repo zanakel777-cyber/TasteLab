@@ -94,6 +94,7 @@ export default function RootLayout({
             <footer className="w-full border-t border-border/70">
               <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-xs text-muted-foreground">
                 <p>TasteLab – degustacijos ir maisto dirbtuvės</p>
+                <p>TasteLab v1.1</p>
                 <ThemeSwitcher />
               </div>
             </footer>
