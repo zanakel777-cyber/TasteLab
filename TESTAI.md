@@ -11,17 +11,26 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | Rezervavome vietą veikloje per Vercel adresą | Užimtumas pasikeičia į „1 / 1 vietos užimtos → Liko 0 vietų“, rezervacija atsiranda „Mano rezervacijos“ | Būtent taip ir įvyko – laisvų vietų neliko | ✅ |
 | Atšaukėme rezervaciją | Rezervacija dingsta iš sąrašo, vieta grįžta į laisvų vietų skaičių | Vieta grįžo, veiklą vėl galima rezervuoti | ✅ |
 | Stebėjome, kas nutinka veikloms, kurių data jau praėjo | Praėjusios veiklos viešame sąraše nebematomos | Pastebėta natūraliai, kai bandomųjų veiklų datos praėjo – iš `/veiklos` jos dingo | ✅ |
+| **Paskutinė vieta – pasenęs ekranas.** Ingrida neatnaujino `/veiklos` puslapio (jame dar rodė „0 / 1“), tuo metu Jeanne rezervavo vienintelę vietą; tada Ingrida paspaudė „Rezervuoti“ | Mygtukas iš pasenusio ekrano nieko neįrašo – duomenų bazė atmeta, nes vietų nebėra | Ingrida gavo „Vietų nebeliko“; `reservations` lentelėje liko 1 eilutė | ✅ |
+| **Paskutinė vieta – vienu metu.** Abi spaudėme „Rezervuoti“ tą pačią 1 vietos veiklą tuo pačiu metu; kartota 2 kartus | Pavyksta tik vienai, kita gauna „Vietų nebeliko“; lentelėje viena eilutė | Kaskart pavyko tik vienai – pirmą kartą Ingridai, antrą Jeanne; `reservations` abu kartus liko 1 eilutė | ✅ |
 
 ## Dar neatlikti bandymai
 
 | Ką darėme | Ko tikėjomės | Kas nutiko | Rezultatas |
 |---|---|---|---|
-| Dvi naršyklės vienu metu rezervuoja tą pačią 1 vietos veiklą („Privati vyno degustacija su someljė“) | Pavyksta tik vienai; kita gauna „Vietų nebeliko“; lentelėje viena eilutė |  |  |
-| Bandymas įrašyti rezervaciją tiesiogiai: `supabase.from('reservations').insert(...)` naršyklės konsolėje | Duomenų bazė neleidžia – `reservations` neturi INSERT taisyklės |  |  |
-| Bandymas per `reserve_seat` perduoti svetimą `user_id` | Neįmanoma – funkcija priima tik `activity_id`, vartotoją ima iš `auth.uid()` |  |  |
-| `reserve_seat` iškvietimas neprisijungus | Grąžina klaidą „Reikia prisijungti“, nieko neįrašo |  |  |
+| A) Tiesioginis įrašymas į `reservations` apeinant `reserve_seat` | Duomenų bazė neleidžia – `reservations` neturi INSERT taisyklės ir teisė atimta |  |  |
+| B) `reserve_seat` su svetimu `user_id` | Neįmanoma – funkcija priima tik `activity_id`, vartotoją ima iš `auth.uid()` |  |  |
+| C) `reserve_seat` iškvietimas neprisijungus | Neprisijungusiam funkcija neprieinama („Reikia prisijungti“ arba teisių klaida) |  |  |
 | Organizatorius atšaukia veiklą, kurioje yra dalyvio rezervacija | Veikla dingsta iš `/veiklos`; dalyvis mato „Veikla atšaukta organizatoriaus“; rezervacija lieka |  |  |
 | Bandymas redaguoti svetimą veiklą (tiesiogiai per adresą ir per `update`) | Puslapis rodo „Tai ne jūsų veikla“, o duomenų bazė pakeitimo neleidžia (RLS) |  |  |
+
+Bandymai **A, B ir C** atliekami skriptu – jo nereikia kartoti ranka naršyklės konsolėje:
+
+```
+node scripts/apsaugos-testas.mjs el.pastas slaptazodis
+```
+
+Skriptas prisijungia nurodyta paskyra, susiranda vyno degustaciją ir atlieka visus tris bandymus. ✅ reiškia, kad duomenų bazė veiksmą **atmetė**; į duomenų bazę neįrašoma nieko.
 
 ## Saugumo vertinimas (9 žingsnis)
 
