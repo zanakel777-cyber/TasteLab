@@ -12,9 +12,11 @@ export function VeiklosRezervuoti({ activityId, freeSpots }: { activityId: strin
   const [refreshing, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);
+  // Veikla atšaukta, nors puslapyje ji dar rodoma (pasenęs ekranas) – mygtukas užrakinamas.
+  const [atsaukta, setAtsaukta] = useState(false);
 
   async function reserve() {
-    if (inFlight.current || refreshing || freeSpots <= 0) return;
+    if (inFlight.current || refreshing || atsaukta || freeSpots <= 0) return;
     inFlight.current = true;
     setPending(true);
     setMessage("");
@@ -30,6 +32,8 @@ export function VeiklosRezervuoti({ activityId, freeSpots }: { activityId: strin
       if (error) {
         setFailed(true);
         setMessage(error.message);
+        // Sprendimą priima duomenų bazė (reserve_seat), sąsaja tik parodo rezultatą.
+        if (error.message.includes("Veikla atšaukta")) setAtsaukta(true);
         return;
       }
       setMessage("Vieta rezervuota");
@@ -45,8 +49,14 @@ export function VeiklosRezervuoti({ activityId, freeSpots }: { activityId: strin
 
   return (
     <div className="flex flex-col gap-2">
-      <Button size="sm" variant="outline" type="button" onClick={reserve} disabled={pending || refreshing || freeSpots <= 0} className="self-start">
-        {pending || refreshing ? "Rezervuojama…" : freeSpots <= 0 ? "Vietų nebeliko" : "Rezervuoti"}
+      <Button size="sm" variant="outline" type="button" onClick={reserve} disabled={pending || refreshing || atsaukta || freeSpots <= 0} className="self-start">
+        {pending || refreshing
+          ? "Rezervuojama…"
+          : atsaukta
+            ? "Veikla atšaukta"
+            : freeSpots <= 0
+              ? "Vietų nebeliko"
+              : "Rezervuoti"}
       </Button>
       <p role={failed ? "alert" : "status"} className={failed ? "text-sm text-destructive" : "text-sm text-foreground"}>{message}</p>
     </div>
