@@ -104,6 +104,7 @@ Viršuje bendra juosta: TasteLab · Veiklos · Mano rezervacijos · Mano veiklos
 - **Kurti** – tik prisijungęs, ir tik tokią eilutę, kurioje `organizer_id` yra jis pats (negali sukurti veiklos kito vardu).
 - **Keisti** – tik tas, kurio `organizer_id` sutampa su jo paskyra. Taip veikia ir redagavimas, ir „Atšaukti veiklą“.
 - **Trinti** – niekam neleidžiama; veikla tik pažymima kaip atšaukta.
+- **Papildomas trigeris `activities_protect_fields`** – tikrina tai, ko RLS taisyklė patikrinti negali (ji sprendžia dėl visos eilutės, ne dėl atskiro stulpelio): po sukūrimo nebegalima keisti `capacity`, `organizer_id` nei `starts_at`, o atšauktos veiklos (`status = 'cancelled'`) nebegalima grąžinti į `active`.
 
 **`reservations`:**
 - **Skaityti** – vartotojas mato tik savo rezervacijas.

@@ -225,22 +225,35 @@ revoke all on public.reservations from anon;
 
 
 -- ============================================================
--- 6. PAPILDOMA APSAUGA: vietų skaičius nekeičiamas
+-- 6. PAPILDOMA APSAUGA: ko po sukūrimo keisti nebegalima
 -- ============================================================
 
--- Trigeris neleidžia po sukūrimo pakeisti capacity ar organizer_id, kad rezervacijų nepasidarytų daugiau nei vietų.
+-- Trigeris saugo keturis dalykus, kurių RLS taisyklė patikrinti negali (ji sprendžia dėl visos eilutės, ne dėl atskiro stulpelio):
+-- capacity, organizer_id, starts_at ir atšauktos veiklos grąžinimą į aktyvias.
 create or replace function public.activities_protect_fields()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
+  -- Vietų skaičius nustatomas kuriant – kitaip rezervacijų galėtų pasidaryti daugiau nei vietų.
   if new.capacity is distinct from old.capacity then
     raise exception 'Vietų skaičiaus keisti negalima';
   end if;
 
+  -- Veiklos savininkas nekeičiamas.
   if new.organizer_id is distinct from old.organizer_id then
     raise exception 'Organizatoriaus keisti negalima';
+  end if;
+
+  -- Data nustatoma kuriant: dalyviai rezervavo būtent tą laiką, todėl jo pastumti nebegalima.
+  if new.starts_at is distinct from old.starts_at then
+    raise exception 'Datos keisti negalima';
+  end if;
+
+  -- Atšaukimas galutinis: iš 'cancelled' atgal į 'active' grįžti negalima, nes dalyviai jau matė pranešimą apie atšaukimą.
+  if old.status = 'cancelled' and new.status = 'active' then
+    raise exception 'Atšauktos veiklos grąžinti negalima';
   end if;
 
   return new;
