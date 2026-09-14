@@ -11,15 +11,17 @@ Vieša versija: https://taste-lab-two.vercel.app (v1.1)
 
 ## Paleidimas vietoje
 
+Klonuok į **atskirą tuščią aplanką** – ne į tą, kuriame jau turi projekto kopiją, kitaip `git clone` nepavyks arba susimaišys du katalogai.
+
 ```bash
 git clone https://github.com/zanakel777-cyber/TasteLab.git
 cd TasteLab
 npm install
-cp .env.example .env.local   # įrašyk tikras reikšmes iš Supabase
+cp .env.example .env.local   # įrašyk tikras reikšmes (žr. žemiau)
 npm run dev
 ```
 
-`.env.local` reikia dviejų reikšmių iš Supabase (Project Settings → API); jos į Git nepatenka:
+`.env.local` reikia dviejų reikšmių; **jų repozitorijoje tyčia nėra**, todėl jas duoda komandos narys, valdantis Supabase projektą (arba pasiimk pati: Supabase → Project Settings → API, jei turi prieigą):
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
