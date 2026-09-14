@@ -23,6 +23,59 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | Organizatorius atšaukia veiklą, kurioje yra dalyvio rezervacija | Veikla dingsta iš `/veiklos`; dalyvis mato „Veikla atšaukta organizatoriaus“; rezervacija lieka |  |  |
 | Bandymas redaguoti svetimą veiklą (tiesiogiai per adresą ir per `update`) | Puslapis rodo „Tai ne jūsų veikla“, o duomenų bazė pakeitimo neleidžia (RLS) |  |  |
 
+## Saugumo vertinimas (9 žingsnis)
+
+Tai kodo peržiūra, o ne bandymas naršyklėje: perskaityti `supabase/schema.sql` (funkcija `reserve_seat`, RLS taisyklės, `UNIQUE`, trigeris) ir dalyvio komponentai `components/veiklos-kortele.tsx`, `components/veiklos-rezervuoti.tsx`, `components/rezervacijos-atsaukti.tsx`. Lentelėje aukščiau surašyti bandymai tas pačias išvadas dar patikrins praktiškai.
+
+**Bendra išvada: rezervacijos įrašymas apsaugotas duomenų bazės lygiu, ne naršyklėje.**
+
+### 1. Du žmonės vienu metu, veikla su 1 vieta
+
+Kiekvienas `.rpc("reserve_seat", …)` kvietimas duomenų bazėje vyksta savo atskiroje operacijoje (tranzakcijoje). Tarkim, Jeanne (A) ir Ingrida (B) paspaudžia beveik vienu metu:
+
+1. **A** įeina į funkciją, patikrina `auth.uid()` – ne tuščias.
+2. **A** paima veiklos eilutę su `select … for update` → **užrakina** tą eilutę.
+3. **B** įeina į funkciją, prieina prie to paties `select … for update` → **sustoja ir laukia**. Čia ir yra visa esmė: B toliau nė vienos patikros neatlieka, tiesiog stovi eilėje.
+4. **A** patikrina: veikla yra, ne atšaukta, dar neprasidėjusi, A dar neužsiregistravęs, užimta 0 iš 1 → įrašo rezervaciją, grąžina jos `id`.
+5. **A** operacija baigiasi, pakeitimas patvirtinamas, **užraktas atlaisvinamas**.
+6. **B** pabunda ir mato jau atnaujintą eilutę. Suskaičiuoja rezervacijas: dabar jų **1**, o `capacity` = 1, todėl `1 >= 1` → `raise exception 'Vietų nebeliko'`.
+7. B naršyklėje gauna klaidą, o `components/veiklos-rezervuoti.tsx` ją parodo raudonai („Vietų nebeliko“). Nieko neįrašoma.
+
+Svarbu, kad **skaičiavimas ir įrašymas yra viduje užrakto** – todėl „abu suskaičiavo 0 ir abu įrašė“ situacija neįmanoma. Rezultatas nepriklauso nuo to, kas greitesnis internetas: laimi tas, kas pirmas gavo užraktą.
+
+### 2. Ar galima apeiti mygtuką ir įrašyti tiesiai į `reservations`?
+
+Ne, ir tai uždaryta **dviem nepriklausomais sluoksniais**:
+
+- `reservations` lentelėje RLS įjungtas, bet **INSERT taisyklės nėra visai**. Kai RLS įjungtas, o taisyklės nėra, veiksmas draudžiamas automatiškai.
+- Be to, atimta pati teisė: `revoke insert, update on public.reservations from anon, authenticated`.
+
+Funkcija įrašyti gali todėl, kad ji `SECURITY DEFINER` – veikia su savo kūrėjo teisėmis, o ne su vartotojo.
+
+### 3. Ar galima paduoti svetimą `user_id`?
+
+Ne. Funkcija priima **tik `activity_id`** – vietos svetimam `user_id` tiesiog nėra. Vartotoją ji pasiima pati: `v_user_id := auth.uid()`, t. y. iš pasirašyto prisijungimo raktelio, kurio naršyklėje suklastoti neįmanoma. O įrašyti eilutę aplenkiant funkciją neleidžia 2 punktas.
+
+Tas pats galioja ir atšaukimui: `components/rezervacijos-atsaukti.tsx` trina su `.eq("user_id", user.id)`, bet net jei kas nors tą sąlygą pašalintų, DELETE taisyklė `using (auth.uid() = user_id)` svetimos rezervacijos ištrinti neleis.
+
+### 4. Ar galima kviesti `reserve_seat` neprisijungus?
+
+Ne, irgi dviem sluoksniais:
+
+- Teisė vykdyti atimta iš visų ir iš `anon`, palikta tik `authenticated` – neprisijungęs gauna „permission denied for function reserve_seat“.
+- Net jei teisė būtų, pirmas funkcijos sakinys yra `if v_user_id is null then raise exception 'Reikia prisijungti'`.
+
+Naršyklės pusėje mygtukas dar prieš tai nukreipia į prisijungimą, bet tai tik patogumas, ne apsauga.
+
+### 5. Ar yra spraga, kurios plane nenumatėm?
+
+Saugumo spragos nerasta. Dvi pastabos, kurios **nėra** pavojingos, bet verta jas žinoti:
+
+- **Datos keitimas.** Trigeris saugo `capacity` ir `organizer_id`, bet ne `starts_at`. Redagavimo formoje data pilka ir nekeičiama, tačiau organizatorius per API galėtų savo veiklos datą pastumti. Tai jo paties veikla, tad svetimų duomenų tai neliečia – tik nesutampa su tuo, ką žada sąsaja. Jei norėsis, į trigerį pridėti `starts_at` – vienas `if`.
+- **Atšauktą veiklą galima grąžinti.** Savininkas gali `status` iš `cancelled` pakeisti atgal į `active` (kitų reikšmių `check` neleidžia). Rezervacijos tuo metu būna išlikusios, tad viskas susidėlioja teisingai, bet plane šito varianto neaprašėm.
+
+Papildomai patikrinta, ko klausimuose nebuvo: veiklų niekas negali ištrinti (teisė atimta ir DELETE taisyklės nėra), svetimos veiklos redaguoti negalima (`using (auth.uid() = organizer_id)`), o rodinys `activities_public` viešai rodo tik skaičius – kas rezervavo, iš jo nesimato.
+
 ## Rastos ir ištaisytos klaidos
 
 ### 1. Vercel „Secret“ tipo `NEXT_PUBLIC_` kintamieji build metu tušti (`Invalid supabaseUrl`)
