@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { OrganizatoriausAtsauktiVeikla } from "@/components/organizatorius-atsaukti-veikla";
 
 /** Viena eilutė iš rodinio activities_public (veikla kartu su vietų skaičiais). */
 export type Veikla = {
@@ -128,13 +129,18 @@ export function OrganizatoriausVeiklosKortele({ veikla }: { veikla: Veikla }) {
           </div>
         </div>
 
-        <div className="mt-auto pt-2">
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/organizatorius/${veikla.id}/redaguoti`}>
-              Redaguoti
-            </Link>
-          </Button>
-        </div>
+        {veikla.status !== "cancelled" && (
+          <div className="mt-auto flex flex-wrap items-start gap-2 pt-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/organizatorius/${veikla.id}/redaguoti`}>
+                Redaguoti
+              </Link>
+            </Button>
+            {busena.tekstas === "Aktyvi" && (
+              <OrganizatoriausAtsauktiVeikla veiklosId={veikla.id} />
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
