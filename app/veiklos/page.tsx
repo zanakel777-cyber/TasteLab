@@ -1,7 +1,20 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { Suspense } from "react";
+import { createClient } from "@/lib/supabase/server";
 import { VeiklosRezervuoti } from "@/components/veiklos-rezervuoti";
 
-export default async function VeiklosPage() {
+export default function VeiklosPage() {
+  return (
+    <section className="flex flex-col gap-6 py-10">
+      <h1 className="text-3xl font-semibold">Veiklos</h1>
+      <Suspense fallback={<p className="text-muted-foreground">Kraunama…</p>}>
+        <VeiklosSarasas />
+      </Suspense>
+    </section>
+  );
+}
+
+// Duomenų dalis atskirai, nes ji skaito sesijos slapukus (cacheComponents reikalauja Suspense).
+async function VeiklosSarasas() {
   const supabase = await createClient();
   const { data: activities, error } = await supabase
     .from("activities_public")
@@ -11,8 +24,7 @@ export default async function VeiklosPage() {
     .order("starts_at", { ascending: true });
 
   return (
-    <section className="flex flex-col gap-6 py-10">
-      <h1 className="text-3xl font-semibold">Veiklos</h1>
+    <>
       {error ? (
         <p role="alert" className="text-destructive">Nepavyko įkelti veiklų. Bandykite dar kartą.</p>
       ) : !activities?.length ? (
@@ -39,6 +51,6 @@ export default async function VeiklosPage() {
           ))}
         </div>
       )}
-    </section>
+    </>
   );
 }

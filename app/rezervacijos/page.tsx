@@ -1,5 +1,6 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { RezervacijosAtsaukti } from "@/components/rezervacijos-atsaukti";
 
@@ -8,7 +9,19 @@ type Reservation = {
   activity: { title: string; starts_at: string; status: string } | null;
 };
 
-export default async function RezervacijosPage() {
+export default function RezervacijosPage() {
+  return (
+    <section className="flex flex-col gap-6 py-10">
+      <h1 className="text-3xl font-semibold">Mano rezervacijos</h1>
+      <Suspense fallback={<p className="text-muted-foreground">Kraunama…</p>}>
+        <ManoRezervacijos />
+      </Suspense>
+    </section>
+  );
+}
+
+// Duomenų dalis atskirai, nes ji skaito sesijos slapukus (cacheComponents reikalauja Suspense).
+async function ManoRezervacijos() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
@@ -21,8 +34,7 @@ export default async function RezervacijosPage() {
   const now = Date.now();
 
   return (
-    <section className="flex flex-col gap-6 py-10">
-      <h1 className="text-3xl font-semibold">Mano rezervacijos</h1>
+    <>
       {error ? (
         <p role="alert" className="text-destructive">Nepavyko įkelti rezervacijų. Bandykite dar kartą.</p>
       ) : !reservations?.length ? (
@@ -49,6 +61,6 @@ export default async function RezervacijosPage() {
           ))}
         </div>
       )}
-    </section>
+    </>
   );
 }

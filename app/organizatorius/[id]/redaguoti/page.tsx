@@ -47,7 +47,9 @@ async function VeiklosRedagavimas({
 
   const { data: veikla, error } = await supabase
     .from("activities")
-    .select("id, organizer_id, title, description, starts_at, capacity, status")
+    .select(
+      "id, organizer_id, title, description, image_url, starts_at, capacity, status",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -73,6 +75,7 @@ async function VeiklosRedagavimas({
       veiklosId={veikla.id}
       pradinisPavadinimas={veikla.title ?? ""}
       pradinisAprasymas={veikla.description ?? ""}
+      pradineNuotrauka={veikla.image_url ?? ""}
       vietuSkaicius={veikla.capacity}
       dataTekstu={formatuotiData(veikla.starts_at)}
     />

@@ -11,6 +11,7 @@ type Props = {
   veiklosId: string;
   pradinisPavadinimas: string;
   pradinisAprasymas: string;
+  pradineNuotrauka: string;
   vietuSkaicius: number;
   dataTekstu: string;
 };
@@ -19,11 +20,14 @@ export function OrganizatoriausRedagavimoForma({
   veiklosId,
   pradinisPavadinimas,
   pradinisAprasymas,
+  pradineNuotrauka,
   vietuSkaicius,
   dataTekstu,
 }: Props) {
   const [title, setTitle] = useState(pradinisPavadinimas);
   const [description, setDescription] = useState(pradinisAprasymas);
+  const [imageUrl, setImageUrl] = useState(pradineNuotrauka);
+  const [nuotraukosKlaida, setNuotraukosKlaida] = useState(false);
   const [klaida, setKlaida] = useState<string | null>(null);
   const [siunciama, setSiunciama] = useState(false);
   const router = useRouter();
@@ -42,12 +46,13 @@ export function OrganizatoriausRedagavimoForma({
     try {
       const supabase = createClient();
 
-      // Keičiam tik pavadinimą ir aprašymą; ar tai mūsų veikla, patikrina RLS taisyklė.
+      // Keičiam tik pavadinimą, aprašymą ir nuotraukos nuorodą; ar tai mūsų veikla, patikrina RLS taisyklė.
       const { error } = await supabase
         .from("activities")
         .update({
           title: title.trim(),
           description: description.trim() || null,
+          image_url: imageUrl.trim() || null,
         })
         .eq("id", veiklosId);
 
@@ -86,6 +91,37 @@ export function OrganizatoriausRedagavimoForma({
           onChange={(e) => setDescription(e.target.value)}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="image_url">Nuotraukos nuoroda (neprivaloma)</Label>
+        <Input
+          id="image_url"
+          type="url"
+          value={imageUrl}
+          placeholder="https://..."
+          onChange={(e) => {
+            setImageUrl(e.target.value);
+            setNuotraukosKlaida(false);
+          }}
+        />
+
+        {/* Maža peržiūra, kad iškart matytųsi, ar nuoroda tikrai veikia. */}
+        {imageUrl.trim() &&
+          (nuotraukosKlaida ? (
+            <p className="text-xs text-red-500">
+              Nuotraukos pagal šią nuorodą įkelti nepavyko
+            </p>
+          ) : (
+            // Nuotraukos gali būti iš bet kurio serverio, todėl paprastas <img>, ne next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl.trim()}
+              alt="Nuotraukos peržiūra"
+              className="h-24 w-40 rounded-md border object-cover"
+              onError={() => setNuotraukosKlaida(true)}
+            />
+          ))}
       </div>
 
       <div className="grid gap-2">
