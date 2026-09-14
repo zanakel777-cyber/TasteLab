@@ -18,6 +18,7 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | **Trigeris: datos keitimas.** SQL Editor'e `update activities set starts_at = starts_at + interval '1 day'` | Duomenų bazė neleidžia keisti datos po sukūrimo | Klaida `P0001: Datos keisti negalima`; įrašas nepasikeitė | ✅ |
 | **Trigeris: atšaukimo atšaukimas.** SQL Editor'e `update activities set status = 'active'` atšauktai veiklai | Duomenų bazė neleidžia grąžinti atšauktos veiklos | Klaida `P0001: Atšauktos veiklos grąžinti negalima`; statusas liko `cancelled` | ✅ |
 | **Atnaujinimas į v1.1.** Paskelbėme naują versiją į tą patį Vercel projektą ir palyginome duomenis prieš ir po diegimo | Diegimas nieko nesugadina: rezervacijos lieka, adresas nesikeičia | Prieš ir po diegimo – 4 rezervacijos, sąrašas identiškas; ta pati vieša nuoroda; Vercel diegimas atitinka commit'ą `1f92131` | ✅ |
+| **Švarus klonavimas pagal README.** Ingrida, naujas aplankas `TasteLab-svarus2`, `git clone` → `npm install` → `.env.local` iš `.env.example` → `npm run dev` | Projektas pasileidžia pagal README | Pavyko. Pastaba: README patikslinti, kad `.env.local` reikšmes duoda komandos narys, ne Supabase, ir klonuoti į atskirą aplanką | ✅ |
 
 ## Dar neatlikti bandymai
 
