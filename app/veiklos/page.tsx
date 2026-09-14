@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { VeiklosRezervuoti } from "@/components/veiklos-rezervuoti";
@@ -15,6 +16,9 @@ export default function VeiklosPage() {
 
 // Duomenų dalis atskirai, nes ji skaito sesijos slapukus (cacheComponents reikalauja Suspense).
 async function VeiklosSarasas() {
+  // Sąrašas skaitomas tik gyvos užklausos metu, kad nebūtų rodomi statybos metu paruošti duomenys.
+  await connection();
+
   const supabase = await createClient();
   const { data: activities, error } = await supabase
     .from("activities_public")

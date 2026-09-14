@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { formatuotiData } from "@/components/organizatorius-veiklos-kortele";
@@ -35,6 +36,10 @@ async function VeiklosRedagavimas({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Sesija ir nukreipimas turi būti skaičiuojami tik gyvos užklausos metu,
+  // kitaip statybos metu (be sesijos) įvykęs redirect patektų į iš anksto paruoštą puslapį.
+  await connection();
+
   const { id } = await params;
   const supabase = await createClient();
 

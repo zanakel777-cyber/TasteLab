@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { RezervacijosAtsaukti } from "@/components/rezervacijos-atsaukti";
@@ -22,6 +23,10 @@ export default function RezervacijosPage() {
 
 // Duomenų dalis atskirai, nes ji skaito sesijos slapukus (cacheComponents reikalauja Suspense).
 async function ManoRezervacijos() {
+  // Sesija ir nukreipimas turi būti skaičiuojami tik gyvos užklausos metu,
+  // kitaip statybos metu (be sesijos) įvykęs redirect patektų į iš anksto paruoštą puslapį.
+  await connection();
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");

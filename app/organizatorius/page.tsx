@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,10 @@ export default function OrganizatoriusPage() {
 
 /** Duomenų dalis atskirai, nes ji skaito sesijos slapukus (cacheComponents reikalauja Suspense). */
 async function ManoVeiklos() {
+  // Sesija ir nukreipimas turi būti skaičiuojami tik gyvos užklausos metu,
+  // kitaip statybos metu (be sesijos) įvykęs redirect patektų į iš anksto paruoštą puslapį.
+  await connection();
+
   const supabase = await createClient();
 
   // Neprisijungusio čia neturėtų būti, bet tikrinam ir patys.
