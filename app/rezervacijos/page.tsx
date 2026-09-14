@@ -66,9 +66,9 @@ async function ManoRezervacijos() {
               );
             }
             return (
-              <VeiklosKortele key={id} veikla={activity}>
+              <VeiklosKortele key={id} veikla={activity} prigesinta={activity.status === "cancelled"}>
                 {activity.status === "cancelled" ? (
-                  <span className="inline-block rounded-md bg-muted px-3 py-2 text-sm font-medium">Veikla atšaukta organizatoriaus</span>
+                  <span className="tl-wine inline-block rounded-md border border-current px-3 py-2 text-sm font-semibold">Veikla atšaukta organizatoriaus</span>
                 ) : (
                   <div className="flex flex-col gap-3">
                     <p className="text-sm text-muted-foreground">{new Date(activity.starts_at).getTime() < now ? "Veikla įvykusi" : "Veikla aktyvi"}</p>
