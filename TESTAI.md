@@ -13,6 +13,10 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | Stebėjome, kas nutinka veikloms, kurių data jau praėjo | Praėjusios veiklos viešame sąraše nebematomos | Pastebėta natūraliai, kai bandomųjų veiklų datos praėjo – iš `/veiklos` jos dingo | ✅ |
 | **Paskutinė vieta – pasenęs ekranas.** Ingrida neatnaujino `/veiklos` puslapio (jame dar rodė „0 / 1“), tuo metu Jeanne rezervavo vienintelę vietą; tada Ingrida paspaudė „Rezervuoti“ | Mygtukas iš pasenusio ekrano nieko neįrašo – duomenų bazė atmeta, nes vietų nebėra | Ingrida gavo „Vietų nebeliko“; `reservations` lentelėje liko 1 eilutė | ✅ |
 | **Paskutinė vieta – vienu metu.** Abi spaudėme „Rezervuoti“ tą pačią 1 vietos veiklą tuo pačiu metu; kartota 2 kartus | Pavyksta tik vienai, kita gauna „Vietų nebeliko“; lentelėje viena eilutė | Kaskart pavyko tik vienai – pirmą kartą Ingridai, antrą Jeanne; `reservations` abu kartus liko 1 eilutė | ✅ |
+| **Veiklos atšaukimas.** Jeanne atšaukė veiklą „Bandomoji – atšaukimui“, kurioje Ingrida turėjo rezervaciją | Organizatoriaus kortelė pažymėta „Atšaukta“; dalyvis mato pranešimą; veikla dingsta iš viešo sąrašo; rezervacija lieka | Organizatoriaus kortelė rodo „Atšaukta“ be jokių mygtukų; Ingridos `/rezervacijos` – prigesinta kortelė su ženklu „Veikla atšaukta organizatoriaus“ ir be mygtuko „Atšaukti rezervaciją“; iš `/veiklos` veikla dingo; `reservations` eilutė liko | ✅ |
+| **Į atšauktą veiklą iš pasenusio puslapio.** Ingrida neatnaujintame `/veiklos` puslapyje paspaudė „Rezervuoti“ jau atšauktai veiklai | Duomenų bazė atmeta; sąsaja parodo priežastį ir neleidžia bandyti dar kartą | Pasirodė „Veikla atšaukta“, mygtukas tapo neaktyvus; nieko neįrašyta | ✅ |
+| **Trigeris: datos keitimas.** SQL Editor'e `update activities set starts_at = starts_at + interval '1 day'` | Duomenų bazė neleidžia keisti datos po sukūrimo | Klaida `P0001: Datos keisti negalima`; įrašas nepasikeitė | ✅ |
+| **Trigeris: atšaukimo atšaukimas.** SQL Editor'e `update activities set status = 'active'` atšauktai veiklai | Duomenų bazė neleidžia grąžinti atšauktos veiklos | Klaida `P0001: Atšauktos veiklos grąžinti negalima`; statusas liko `cancelled` | ✅ |
 
 ## Dar neatlikti bandymai
 
@@ -21,7 +25,6 @@ Bandymus atliekame dviese, dviem skirtingomis paskyromis (antra – naršyklės 
 | A) Tiesioginis įrašymas į `reservations` apeinant `reserve_seat` | Duomenų bazė neleidžia – `reservations` neturi INSERT taisyklės ir teisė atimta |  |  |
 | B) `reserve_seat` su svetimu `user_id` | Neįmanoma – funkcija priima tik `activity_id`, vartotoją ima iš `auth.uid()` |  |  |
 | C) `reserve_seat` iškvietimas neprisijungus | Neprisijungusiam funkcija neprieinama („Reikia prisijungti“ arba teisių klaida) |  |  |
-| Organizatorius atšaukia veiklą, kurioje yra dalyvio rezervacija | Veikla dingsta iš `/veiklos`; dalyvis mato „Veikla atšaukta organizatoriaus“; rezervacija lieka |  |  |
 | Bandymas redaguoti svetimą veiklą (tiesiogiai per adresą ir per `update`) | Puslapis rodo „Tai ne jūsų veikla“, o duomenų bazė pakeitimo neleidžia (RLS) |  |  |
 
 Bandymai **A, B ir C** atliekami skriptu – jo nereikia kartoti ranka naršyklės konsolėje:
@@ -78,10 +81,10 @@ Naršyklės pusėje mygtukas dar prieš tai nukreipia į prisijungimą, bet tai 
 
 ### 5. Ar yra spraga, kurios plane nenumatėm?
 
-Saugumo spragos nerasta. Dvi pastabos, kurios **nėra** pavojingos, bet verta jas žinoti:
+Saugumo spragos nerasta. Dvi pastabos, kurios **nebuvo** pavojingos, bet neatitiko to, ką žada sąsaja – **abi išspręstos 10 žingsnyje, migracija `supabase/migracijos/2026-09-14-atsaukimas.sql`**:
 
-- **Datos keitimas.** Trigeris saugo `capacity` ir `organizer_id`, bet ne `starts_at`. Redagavimo formoje data pilka ir nekeičiama, tačiau organizatorius per API galėtų savo veiklos datą pastumti. Tai jo paties veikla, tad svetimų duomenų tai neliečia – tik nesutampa su tuo, ką žada sąsaja. Jei norėsis, į trigerį pridėti `starts_at` – vienas `if`.
-- **Atšauktą veiklą galima grąžinti.** Savininkas gali `status` iš `cancelled` pakeisti atgal į `active` (kitų reikšmių `check` neleidžia). Rezervacijos tuo metu būna išlikusios, tad viskas susidėlioja teisingai, bet plane šito varianto neaprašėm.
+- **Datos keitimas.** ✅ *Išspręsta 2026-09-14.* Trigeris saugojo `capacity` ir `organizer_id`, bet ne `starts_at`: redagavimo formoje data pilka ir nekeičiama, tačiau organizatorius per API vis tiek galėjo ją pastumti, nors dalyviai rezervavo būtent tą laiką. Dabar trigeris meta `Datos keisti negalima` (patikrinta – žr. lentelę aukščiau).
+- **Atšauktą veiklą galima grąžinti.** ✅ *Išspręsta 2026-09-14.* Savininkas galėjo `status` iš `cancelled` pakeisti atgal į `active`, nors dalyviai jau buvo matę pranešimą apie atšaukimą. Dabar trigeris meta `Atšauktos veiklos grąžinti negalima`, t. y. atšaukimas galutinis (patikrinta – žr. lentelę aukščiau).
 
 Papildomai patikrinta, ko klausimuose nebuvo: veiklų niekas negali ištrinti (teisė atimta ir DELETE taisyklės nėra), svetimos veiklos redaguoti negalima (`using (auth.uid() = organizer_id)`), o rodinys `activities_public` viešai rodo tik skaičius – kas rezervavo, iš jo nesimato.
 
