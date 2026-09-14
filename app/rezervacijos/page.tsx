@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { VeiklosKortele, type KortelesVeikla } from "@/components/veiklos-kortele";
 import { RezervacijosAtsaukti } from "@/components/rezervacijos-atsaukti";
 
 type Reservation = {
   id: string;
-  activity: { title: string; starts_at: string; status: string } | null;
+  activity_id: string;
 };
 
 export default function RezervacijosPage() {
@@ -32,38 +33,51 @@ async function ManoRezervacijos() {
   if (!user) redirect("/auth/login");
   const { data: reservations, error } = await supabase
     .from("reservations")
-    .select("id, activity:activities(title, starts_at, status)")
+    .select("id, activity_id")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .returns<Reservation[]>();
+  const activityIds = [...new Set(reservations?.map(({ activity_id }) => activity_id) ?? [])];
+  const { data: activities, error: activitiesError } = !error && activityIds.length
+    ? await supabase.from("activities_public")
+      .select("id, title, description, image_url, starts_at, capacity, reserved_count, free_spots, status")
+      .in("id", activityIds)
+      .returns<(KortelesVeikla & { status: string })[]>()
+    : { data: null, error: null };
+  const activitiesById = new Map(activities?.map((activity) => [activity.id, activity]));
   const now = Date.now();
 
   return (
     <>
-      {error ? (
+      {error || activitiesError ? (
         <p role="alert" className="text-destructive">Nepavyko įkelti rezervacijų. Bandykite dar kartą.</p>
       ) : !reservations?.length ? (
         <p className="text-muted-foreground">Dar neturite rezervacijų. <Link href="/veiklos" className="underline">Peržiūrėti veiklas</Link></p>
       ) : (
-        <div className="grid gap-4">
-          {reservations.map(({ id, activity }) => (
-            <article key={id} className="flex flex-col items-start gap-4 rounded-xl border bg-card p-6 text-card-foreground">
-              <h2 className="break-words text-xl font-semibold">{activity?.title ?? "Veiklos duomenys nepasiekiami"}</h2>
-              {activity && (
-                <time dateTime={activity.starts_at}>
-                  {new Date(activity.starts_at).toLocaleString("lt-LT", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Vilnius" })}
-                </time>
-              )}
-              {activity?.status === "cancelled" ? (
-                <span className="rounded-md bg-muted px-3 py-2 text-sm font-medium">Veikla atšaukta organizatoriaus</span>
-              ) : (
-                <>
-                  {activity && <p className="text-sm text-muted-foreground">{new Date(activity.starts_at).getTime() < now ? "Veikla įvykusi" : "Veikla aktyvi"}</p>}
+        <div className="grid gap-6 sm:grid-cols-2">
+          {reservations.map(({ id, activity_id }) => {
+            const activity = activitiesById.get(activity_id);
+            if (!activity) {
+              return (
+                <article key={id} className="tl-card flex flex-col gap-3 p-5">
+                  <h2 className="text-lg font-semibold">Veiklos duomenys nepasiekiami</h2>
                   <RezervacijosAtsaukti reservationId={id} />
-                </>
-              )}
-            </article>
-          ))}
+                </article>
+              );
+            }
+            return (
+              <VeiklosKortele key={id} veikla={activity}>
+                {activity.status === "cancelled" ? (
+                  <span className="inline-block rounded-md bg-muted px-3 py-2 text-sm font-medium">Veikla atšaukta organizatoriaus</span>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm text-muted-foreground">{new Date(activity.starts_at).getTime() < now ? "Veikla įvykusi" : "Veikla aktyvi"}</p>
+                    <RezervacijosAtsaukti reservationId={id} />
+                  </div>
+                )}
+              </VeiklosKortele>
+            );
+          })}
         </div>
       )}
     </>

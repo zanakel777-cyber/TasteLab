@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { VeiklosKortele } from "@/components/veiklos-kortele";
 import { VeiklosRezervuoti } from "@/components/veiklos-rezervuoti";
 
 export default function VeiklosPage() {
@@ -36,22 +37,9 @@ async function VeiklosSarasas() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
           {activities.map((activity) => (
-            <article key={activity.id} className="flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground">
-              {activity.image_url && (
-                // Organizatorių nuotraukų nuorodos gali būti iš bet kurio serverio.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={activity.image_url} alt={activity.title} loading="lazy" className="h-52 w-full object-cover" />
-              )}
-              <div className="flex flex-1 flex-col gap-4 p-6">
-                <h2 className="break-words text-xl font-semibold">{activity.title}</h2>
-                <p className="whitespace-pre-line break-words text-muted-foreground">{activity.description}</p>
-                <time dateTime={activity.starts_at}>
-                  {new Date(activity.starts_at).toLocaleString("lt-LT", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Vilnius" })}
-                </time>
-                <p>{activity.reserved_count} / {activity.capacity} vietos užimtos → Liko {activity.free_spots} vietos</p>
-                <div className="mt-auto"><VeiklosRezervuoti activityId={activity.id} freeSpots={activity.free_spots} /></div>
-              </div>
-            </article>
+            <VeiklosKortele key={activity.id} veikla={activity}>
+              <VeiklosRezervuoti activityId={activity.id} freeSpots={activity.free_spots} />
+            </VeiklosKortele>
           ))}
         </div>
       )}

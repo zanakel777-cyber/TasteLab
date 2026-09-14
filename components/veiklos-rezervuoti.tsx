@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -44,9 +45,9 @@ export function VeiklosRezervuoti({ activityId, freeSpots }: { activityId: strin
 
   return (
     <div className="flex flex-col gap-2">
-      <button type="button" onClick={reserve} disabled={pending || refreshing || freeSpots <= 0} className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+      <Button size="sm" variant="outline" type="button" onClick={reserve} disabled={pending || refreshing || freeSpots <= 0} className="self-start">
         {pending || refreshing ? "Rezervuojama…" : freeSpots <= 0 ? "Vietų nebeliko" : "Rezervuoti"}
-      </button>
+      </Button>
       <p role={failed ? "alert" : "status"} className={failed ? "text-sm text-destructive" : "text-sm text-foreground"}>{message}</p>
     </div>
   );
