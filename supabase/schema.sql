@@ -266,3 +266,28 @@ create trigger activities_protect_fields_trg
   before update on public.activities
   for each row
   execute function public.activities_protect_fields();
+
+
+-- Naujos veiklos data turi būti ateityje. CHECK taisyklė čia netinka – Postgres reikalauja,
+-- kad CHECK naudotų tik IMMUTABLE funkcijas, o now() tokia nėra; todėl tikrinam trigeriu.
+-- Tikrinamas tik įrašymas: datos keisti vėliau ir taip neleidžia activities_protect_fields.
+create or replace function public.activities_check_starts_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.starts_at <= now() then
+    raise exception 'Data turi būti ateityje';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists activities_check_starts_at_trg on public.activities;
+
+create trigger activities_check_starts_at_trg
+  before insert on public.activities
+  for each row
+  execute function public.activities_check_starts_at();

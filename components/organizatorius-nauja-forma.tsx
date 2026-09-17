@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,16 @@ export function OrganizatoriausNaujaForma() {
   const [capacity, setCapacity] = useState("8");
   const [klaida, setKlaida] = useState<string | null>(null);
   const [siunciama, setSiunciama] = useState(false);
+  // Anksčiausia galima data kalendoriuje. Nustatom tik po prijungimo, nes serverio
+  // ir naršyklės laikas skiriasi – kitaip gautume hidratacijos neatitikimą.
+  const [anksciausiaData, setAnksciausiaData] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    const dabar = new Date();
+    dabar.setMinutes(dabar.getMinutes() - dabar.getTimezoneOffset());
+    setAnksciausiaData(dabar.toISOString().slice(0, 16));
+  }, []);
 
   const kurti = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +38,11 @@ export function OrganizatoriausNaujaForma() {
     }
     if (!startsAt) {
       setKlaida("Nurodykite datą ir laiką");
+      return;
+    }
+    // Ta pati taisyklė kaip duomenų bazėje – čia tik tam, kad žinutė būtų lietuviška ir greita.
+    if (new Date(startsAt).getTime() <= Date.now()) {
+      setKlaida("Data ir laikas turi būti ateityje");
       return;
     }
     if (!Number.isInteger(vietuSkaicius) || vietuSkaicius < 1) {
@@ -115,9 +129,13 @@ export function OrganizatoriausNaujaForma() {
           id="starts_at"
           type="datetime-local"
           required
+          min={anksciausiaData || undefined}
           value={startsAt}
           onChange={(e) => setStartsAt(e.target.value)}
         />
+        <p className="text-xs text-foreground/60">
+          Veikla turi prasidėti ateityje – praeities datos pasirinkti negalima.
+        </p>
       </div>
 
       <div className="grid gap-2">
